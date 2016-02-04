@@ -22,7 +22,6 @@
       ];
 
       var CommentBox = React.createClass({
-
         loadCommentsFromServer: function() {
           $.ajax({
             url: this.props.url,
@@ -36,6 +35,25 @@
             }.bind(this)
           });
         },
+        handleCommentSubmit: function(comment){
+          var comments = this.state.data;
+          comment.id = Date.now();
+          var newComments = comments.concat([comment]);
+          this.setState({data: newComments});
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            type: 'POST',
+            data: comment,
+            success: function(data){
+              this.setState({data: data});
+            }.bind(this),
+            error: function(xhr,status, data){
+              this.setState({data: comments});
+              console.error(this.props.url)
+            }
+          })
+        },
         getInitialState: function() {
           return {data: []};
         },
@@ -48,7 +66,7 @@
             <div className="commentBox">
               <h1>Comments</h1>
               <CommentList data={this.state.data} />
-              <CommentForm />
+              <CommentForm onCommentSubmit={this.handleCommentSubmit} />
             </div>
           );
         }
@@ -66,11 +84,11 @@
         handleSubmit: function(e) {
           e.preventDefault();
           var author = this.state.author.trim();
-          var text = this.text.author.trim();
+          var text = this.state.text.trim();
           if (!text || !author) {
             return;
           }
-          // TODO: Send request to server
+          this.props.onCommentSubmit({author: author, text: text});
           this.setState({author: '', text: ''});
         },
         render: function() {
